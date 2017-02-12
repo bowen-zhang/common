@@ -14,7 +14,7 @@ class _SubscriberInfo(object):
     self.last_transmission = time.time()
 
 
-class Pubsub(pattern.Singleton):
+class Pubsub(pattern.Singleton, pattern.Logger):
 
   def __init__(self, *args, **kwargs):
     super(Pubsub, self).__init__(*args, **kwargs)
@@ -28,7 +28,13 @@ class Pubsub(pattern.Singleton):
     ts = time.time()
     for info in subscribers_info:
       if ts - info.last_transmission >= info.min_interval.total_seconds():
-        info.callback(topic, data)
+        try:
+          info.callback(topic, data)
+        except:
+          exc_type, exc_value, exc_traceback = sys.exc_info()
+          msg = traceback.format_exception(exc_type, exc_value, exc_traceback)
+          self.logger.warn('\n'.join(msg))
+
         info.last_transmission = ts
 
   def subscribe(self, topic, callback, min_interval=datetime.timedelta(seconds=0)):
@@ -68,4 +74,7 @@ class Subscriber(object):
 
   def subscribe(self, topic, callback):
     self._pubsub.subscribe(topic, callback)
+
+  def unsubscribe(self, topic, callback):
+    self._pubsub.unsubscribe(topic, callback)
 

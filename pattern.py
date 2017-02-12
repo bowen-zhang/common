@@ -47,10 +47,10 @@ class Singleton(object):
     return cls()
 
 
-class Logging(object):
+class Logger(object):
 
   def __init__(self, *args, **kwargs):
-    super(Logging, self).__init__(*args, **kwargs)
+    super(Logger, self).__init__(*args, **kwargs)
     self._logger = logging.getLogger(self.__class__.__name__)
 
   @property
@@ -58,7 +58,7 @@ class Logging(object):
     return self._logger
 
 
-class Worker(Logging):
+class Worker(Logger):
 
   def __init__(self, *args, **kwargs):
     super(Worker, self).__init__(*args, **kwargs)
@@ -79,6 +79,7 @@ class Worker(Logging):
       self._thread = None
 
   def close(self):
+    self.logger.debug('Closing...')
     self.stop()
 
   def _run(self):
@@ -87,9 +88,12 @@ class Worker(Logging):
       try:
         self._on_run()
       except:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        msg = traceback.format_exception(exc_type, exc_value, exc_traceback)
-        self.logger.warn('\n'.join(msg))
+        try:
+          exc_type, exc_value, exc_traceback = sys.exc_info()
+          msg = traceback.format_exception(exc_type, exc_value, exc_traceback)
+          self.logger.warn('\n'.join(msg))
+        except:
+          pass
 
     self._on_stop()
 
