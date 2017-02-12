@@ -50,7 +50,7 @@ class Singleton(object):
 class Logger(object):
 
   def __init__(self, *args, **kwargs):
-    super(Logger, self).__init__(*args, **kwargs)
+    super(Logger, self).__init__()
     self._logger = logging.getLogger(self.__class__.__name__)
 
   @property

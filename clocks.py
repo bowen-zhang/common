@@ -19,6 +19,12 @@ class ReplayClock(object):
     return self._start_time + elapsed
 
 
+class SystemClock(object):
+  @property
+  def utc(self):
+    return datetime.datetime.utcnow()
+
+
 class GpsClock(pattern.Logger):
   MIN_TIME = datetime.datetime(2017, 1, 1, 0, 0, 0)
   THRESHOLD = datetime.timedelta(seconds=60)
