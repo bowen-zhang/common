@@ -1,5 +1,6 @@
 import datetime
 import retrying
+import os
 
 from common import pattern
 
@@ -33,9 +34,13 @@ class GpsClock(pattern.Logger):
     super(GpsClock, self).__init__(*args, **kwargs)
     self._gps = gps
 
-    self._wait_for_local_time()
+    #self._wait_for_local_time()
     self._wait_for_gps_time()
-    self._wait_for_time_match()
+    self.logger.info('System time was {0}.'.format(datetime.datetime.utcnow()))
+    self.logger.info('Setting system time to {0}...'.format(self._gps.utc))
+    os.system('sudo date -s {0:%Y-%m-%dT%H:%M:%S.000Z}'.format(self._gps.utc))
+    self.logger.info('System time is {0}.'.format(datetime.datetime.utcnow()))
+    #self._wait_for_time_match()
 
     self._time_offset = self._gps.utc - datetime.datetime.utcnow()
 
