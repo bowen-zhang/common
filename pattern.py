@@ -4,6 +4,7 @@ import threading
 import time
 import traceback
 
+
 class EventEmitter(object):
 
   def __init__(self, *args, **kwargs):
@@ -62,20 +63,29 @@ class Worker(Logger):
 
   def __init__(self, *args, **kwargs):
     super(Worker, self).__init__(*args, **kwargs)
+    self._thread = None
+
+  @property
+  def is_running(self):
+    return self._thread and self._thread.is_alive()
 
   def start(self):
+    assert not self.is_running
+
     self._abort = False
     self._thread = threading.Thread(target=self._run)
     self._thread.daemon = True
     self._thread.start()
 
   def wait(self):
-    self._thread.join()
+    if self.is_running:
+      self._thread.join()
 
   def stop(self):
     self._abort = True
     if self._thread:
-      self._thread.join()
+      if threading.current_thread() != self._thread:
+        self._thread.join()
       self._thread = None
 
   def close(self):
@@ -105,4 +115,3 @@ class Worker(Logger):
 
   def _on_stop(self):
     pass
-

@@ -35,12 +35,14 @@ class ChunkFileWriter(object):
 
   def _create_file(self):
     self._file_no += 1
-    filename = '{0}_{1:0>3}{2}'.format(self._filename, self._file_no, self._ext)
+    filename = '{0}_{1:0>3}{2}'.format(
+        self._filename, self._file_no, self._ext)
     self._file = open(os.path.join(self._path, filename), self._file_mode)
     self._next_flush = datetime.datetime.utcnow() + ChunkFileWriter.FLUSH_INTERVAL
 
 
 class ChunkFileReader(object):
+
   def __init__(self, filepath, file_mode='r'):
     self._path, basename = os.path.split(filepath)
     self._filename, self._ext = os.path.splitext(basename)
@@ -61,7 +63,8 @@ class ChunkFileReader(object):
 
       if not self._file:
         self._file_no += 1
-        filename = '{0}_{1:0>3}{2}'.format(self._filename, self._file_no, self._ext)
+        filename = '{0}_{1:0>3}{2}'.format(
+            self._filename, self._file_no, self._ext)
         filepath = os.path.join(self._path, filename)
         if not os.path.isfile(filepath):
           return None
@@ -71,3 +74,38 @@ class ChunkFileReader(object):
     if self._file:
       self._file.close()
       self._file = None
+
+
+class TimedFile(object):
+
+  def __init__(self, path, extension, interval, prefix=None, postfix=None):
+    self._path = path
+    self._extension = extension
+    self._interval = interval
+    self._prefix = prefix if prefix else ''
+    self._postfix = postfix if postfix else ''
+    self._filepath = None
+    self._expiration = datetime.datetime.now()
+
+  @property
+  def name(self):
+    if self.has_changed():
+      self._update()
+    return self._filepath
+
+  def has_changed(self):
+    return datetime.datetime.now() >= self._expiration
+
+  def _update(self):
+    now = datetime.datetime.now()
+    midnight = datetime.datetime(now.year, now.month, now.day, 0, 0, 0)
+    elapsed = now - midnight
+    cycles = int(elapsed.total_seconds() / self._interval.total_seconds())
+    timestamp = midnight + datetime.timedelta(
+        seconds=self._interval.total_seconds() * cycles)
+    self._expiration = midnight + datetime.timedelta(
+        seconds=self._interval.total_seconds() * (cycles + 1))
+
+    filename = '{0}{1:%H%M%S}{2}.{3}'.format(self._prefix, timestamp,
+                                             self._postfix, self._extension)
+    self._filepath = os.path.join(self._path, filename)
