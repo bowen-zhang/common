@@ -62,8 +62,12 @@ class App(pattern.Logger):
       logging.Formatter('%(levelname)-8s %(name)-12s: %(message)s'))
     root.addHandler(console)
 
+  def close(self):
+    self.logger.info('Exiting app...')
+    logging.shutdown()
+
   def shutdown(self, exitcode=0):
-    self.logger.info('Shutting down...')
+    self.close()
     sys.exit(exitcode)
 
   def _signal_handler(self, signal, frame):
