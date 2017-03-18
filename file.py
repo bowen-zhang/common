@@ -35,12 +35,15 @@ class ChunkFileWriter(object):
 
   def _create_file(self):
     self._file_no += 1
-    filename = '{0}_{1:0>3}{2}'.format(self._filename, self._file_no, self._ext)
+    filename = '{0}_{1:0>3}{2}'.format(self._filename, self._file_no,
+                                       self._ext)
     self._file = open(os.path.join(self._path, filename), self._file_mode)
-    self._next_flush = datetime.datetime.utcnow() + ChunkFileWriter.FLUSH_INTERVAL
+    self._next_flush = datetime.datetime.utcnow(
+    ) + ChunkFileWriter.FLUSH_INTERVAL
 
 
 class ChunkFileReader(object):
+
   def __init__(self, filepath, file_mode='r'):
     self._path, basename = os.path.split(filepath)
     self._filename, self._ext = os.path.splitext(basename)
@@ -61,10 +64,12 @@ class ChunkFileReader(object):
 
       if not self._file:
         self._file_no += 1
-        filename = '{0}_{1:0>3}{2}'.format(self._filename, self._file_no, self._ext)
+        filename = '{0}_{1:0>3}{2}'.format(self._filename, self._file_no,
+                                           self._ext)
         filepath = os.path.join(self._path, filename)
         if not os.path.isfile(filepath):
           return None
+        print filepath
         self._file = open(filepath, self._file_mode)
 
   def close(self):

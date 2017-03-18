@@ -4,10 +4,11 @@ import threading
 import time
 import traceback
 
+
 class EventEmitter(object):
 
   def __init__(self, *args, **kwargs):
-    super(EventEmitter, self).__init__(*args, **kwargs)
+    super(EventEmitter, self).__init__()
     self._event_handlers = {}
 
   def on(self, event, callback):
@@ -83,10 +84,14 @@ class Worker(Logger):
     self.stop()
 
   def _run(self):
-    self._on_start()
+    if self._on_start() == False:
+      self._on_stop()
+      return
+
     while not self._abort:
       try:
-        self._on_run()
+        if self._on_run() == False:
+          break
       except:
         try:
           exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -105,4 +110,3 @@ class Worker(Logger):
 
   def _on_stop(self):
     pass
-

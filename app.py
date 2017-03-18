@@ -1,3 +1,4 @@
+import datetime
 import logging
 import os
 import signal
@@ -8,13 +9,14 @@ from common import pattern
 
 import gflags
 
-
 FLAGS = gflags.FLAGS
-gflags.DEFINE_string('loglevel', 'DEBUG', 'Level of log to output, such as ERROR, WARNING, INFO, DEBUG.')
+gflags.DEFINE_string(
+    'loglevel', 'DEBUG',
+    'Level of log to output, such as ERROR, WARNING, INFO, DEBUG.')
 
 
 class UTCFormatter(logging.Formatter):
-    converter = time.gmtime
+  converter = time.gmtime
 
 
 class App(pattern.Logger):
@@ -36,20 +38,24 @@ class App(pattern.Logger):
     root = logging.getLogger('')
     root.setLevel(logging.DEBUG)
     logfile_formatter = UTCFormatter(
-      fmt='%(levelname)-8s %(asctime)s %(name)-12s %(message)s',
-      datefmt='%m%d %H:%M:%S')
+        fmt='%(levelname)-8s %(asctime)s %(name)-12s %(message)s',
+        datefmt='%m%d %H:%M:%S')
 
-    debug = logging.FileHandler(os.path.join(log_path, self.name + '.all'))
+    timestamp = '.{0:%Y%m%d.%H%M%S}'.format(datetime.datetime.utcnow())
+    debug = logging.FileHandler(
+        os.path.join(log_path, self.name + timestamp + '.all'))
     debug.setLevel(logging.DEBUG)
     debug.setFormatter(logfile_formatter)
     root.addHandler(debug)
 
-    warning = logging.FileHandler(os.path.join(log_path, self.name + '.wrn'))
+    warning = logging.FileHandler(
+        os.path.join(log_path, self.name + timestamp + '.wrn'))
     warning.setLevel(logging.WARNING)
     warning.setFormatter(logfile_formatter)
     root.addHandler(warning)
 
-    error = logging.FileHandler(os.path.join(log_path, self.name + '.err'))
+    error = logging.FileHandler(
+        os.path.join(log_path, self.name + timestamp + '.err'))
     error.setLevel(logging.ERROR)
     error.setFormatter(logfile_formatter)
     root.addHandler(error)
@@ -57,7 +63,8 @@ class App(pattern.Logger):
     console = logging.StreamHandler()
     log_level = getattr(logging, FLAGS.loglevel.upper(), None)
     console.setLevel(log_level)
-    console.setFormatter(logging.Formatter('%(levelname)-8s %(name)-12s: %(message)s'))
+    console.setFormatter(
+        logging.Formatter('%(levelname)-8s %(name)-12s: %(message)s'))
     root.addHandler(console)
 
   def shutdown(self, exitcode=0):

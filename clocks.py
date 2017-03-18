@@ -7,20 +7,20 @@ from common import pattern
 
 class ReplayClock(object):
 
-  def __init__(self, start_time, end_time, speed):
+  def __init__(self, start_time, speed):
     self._start_time = start_time
-    self._end_time = end_time
     self._speed = speed
     self._true_start_time = datetime.datetime.utcnow()
 
   @property
   def utc(self):
     elapsed = datetime.datetime.utcnow() - self._true_start_time
-    elapsed = datetime.timedelta(seconds = elapsed.total_seconds() * self._speed)
+    elapsed = datetime.timedelta(seconds=elapsed.total_seconds() * self._speed)
     return self._start_time + elapsed
 
 
 class SystemClock(object):
+
   @property
   def utc(self):
     return datetime.datetime.utcnow()
@@ -48,7 +48,8 @@ class GpsClock(pattern.Logger):
   def utc(self):
     return datetime.datetime.utcnow() + self._time_offset
 
-  @retrying.retry(wait_fixed=1000, stop_max_delay=60000, retry_on_exception=lambda x: True)
+  @retrying.retry(
+      wait_fixed=1000, stop_max_delay=60000, retry_on_exception=lambda x: True)
   def _wait_for_local_time(self):
     if datetime.datetime.utcnow() < self.__class__.MIN_TIME:
       self.logger.debug('Local time not available.')
@@ -60,7 +61,8 @@ class GpsClock(pattern.Logger):
       self.logger.debug('GPS time not available.')
       raise Exception('GPS time not available.')
 
-  @retrying.retry(wait_fixed=1000, stop_max_delay=60000, retry_on_exception=lambda x: True)
+  @retrying.retry(
+      wait_fixed=1000, stop_max_delay=60000, retry_on_exception=lambda x: True)
   def _wait_for_time_match(self):
     diff = datetime.datetime.utcnow() - self._gps.utc
     if diff > self.__class__.THRESHOLD or diff < -self.__class__.THRESHOLD:
