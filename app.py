@@ -11,8 +11,8 @@ import gflags
 
 FLAGS = gflags.FLAGS
 gflags.DEFINE_string(
-  'loglevel', 'DEBUG',
-  'Level of log to output, such as ERROR, WARNING, INFO, DEBUG.')
+    'loglevel', 'DEBUG',
+    'Level of log to output, such as ERROR, WARNING, INFO, DEBUG.')
 
 
 class UTCFormatter(logging.Formatter):
@@ -20,6 +20,7 @@ class UTCFormatter(logging.Formatter):
 
 
 class App(pattern.Logger):
+
   def __init__(self, name, *args, **kwargs):
     super(App, self).__init__(*args, **kwargs)
 
@@ -37,8 +38,8 @@ class App(pattern.Logger):
     root = logging.getLogger('')
     root.setLevel(logging.DEBUG)
     logfile_formatter = UTCFormatter(
-      fmt='%(levelname)-8s %(asctime)s %(name)-12s %(message)s',
-      datefmt='%m%d %H:%M:%S')
+        fmt='%(levelname)-8s %(asctime)s %(name)-12s %(message)s',
+        datefmt='%m%d %H:%M:%S')
 
     debug = logging.FileHandler(os.path.join(log_path, self.name + '.all'))
     debug.setLevel(logging.DEBUG)
@@ -59,7 +60,7 @@ class App(pattern.Logger):
     log_level = getattr(logging, FLAGS.loglevel.upper(), None)
     console.setLevel(log_level)
     console.setFormatter(
-      logging.Formatter('%(levelname)-8s %(name)-12s: %(message)s'))
+        logging.Formatter('%(levelname)-8s %(name)-12s: %(message)s'))
     root.addHandler(console)
 
   def close(self):
@@ -76,6 +77,7 @@ class App(pattern.Logger):
 
 
 class Config(object):
+
   def __init__(self, config_path, default_section=None):
     self._config = ConfigParser.ConfigParser()
     self._config.read(config_path)

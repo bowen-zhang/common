@@ -115,3 +115,10 @@ class Worker(Logger):
 
   def _on_stop(self):
     pass
+
+  def _sleep(self, seconds):
+    while not self._abort and seconds > 1:
+      time.sleep(1)
+      seconds -= 1
+    if not self._abort and seconds > 0:
+      time.sleep(seconds)
