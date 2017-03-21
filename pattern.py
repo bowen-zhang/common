@@ -6,7 +6,6 @@ import traceback
 
 
 class EventEmitter(object):
-
   def __init__(self, *args, **kwargs):
     super(EventEmitter, self).__init__(*args, **kwargs)
     self._event_handlers = {}
@@ -35,8 +34,12 @@ class EventEmitter(object):
     self._event_handlers = None
 
 
-class Singleton(object):
+class Closable(object):
+  def close(self):
+    raise NotImplementedError()
 
+
+class Singleton(object):
   @classmethod
   def get_instance(cls):
     if not hasattr(cls, '_singleton_instance'):
@@ -49,7 +52,6 @@ class Singleton(object):
 
 
 class Logger(object):
-
   def __init__(self, *args, **kwargs):
     super(Logger, self).__init__()
     self._logger = logging.getLogger(self.__class__.__name__)
@@ -59,8 +61,7 @@ class Logger(object):
     return self._logger
 
 
-class Worker(Logger):
-
+class Worker(Logger, Closable):
   def __init__(self, *args, **kwargs):
     super(Worker, self).__init__(*args, **kwargs)
     self._thread = None
@@ -90,7 +91,9 @@ class Worker(Logger):
 
   def close(self):
     self.logger.debug('Closing...')
-    self.stop()
+    if self.is_running:
+      self.stop()
+    self.logger.debug('Closed.')
 
   def _run(self):
     self._on_start()

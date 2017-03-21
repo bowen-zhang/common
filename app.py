@@ -19,8 +19,7 @@ class UTCFormatter(logging.Formatter):
   converter = time.gmtime
 
 
-class App(pattern.Logger):
-
+class App(pattern.Logger, pattern.Closable):
   def __init__(self, name, *args, **kwargs):
     super(App, self).__init__(*args, **kwargs)
 
@@ -77,7 +76,6 @@ class App(pattern.Logger):
 
 
 class Config(object):
-
   def __init__(self, config_path, default_section=None):
     self._config = ConfigParser.ConfigParser()
     self._config.read(config_path)
