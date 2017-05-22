@@ -37,7 +37,7 @@ class App(pattern.Logger, pattern.Closable):
       os.makedirs(log_path)
 
     root = logging.getLogger('')
-    root.setLevel(logging.DEBUG)
+    root.setLevel(logging.INFO)
     logfile_formatter = UTCFormatter(
         fmt='%(levelname)-8s %(asctime)s %(name)-12s %(message)s',
         datefmt='%m%d %H:%M:%S')
@@ -45,7 +45,7 @@ class App(pattern.Logger, pattern.Closable):
     timestamp = '.{0:%Y%m%d.%H%M%S}'.format(datetime.datetime.utcnow())
     debug = logging.FileHandler(
         os.path.join(log_path, self.name + timestamp + '.all'))
-    debug.setLevel(logging.DEBUG)
+    debug.setLevel(logging.INFO)
     debug.setFormatter(logfile_formatter)
     root.addHandler(debug)
 

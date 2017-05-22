@@ -1,3 +1,4 @@
+import abc
 import logging
 import sys
 import threading
@@ -66,6 +67,7 @@ class Logger(object):
 
 
 class Worker(Logger, Closable):
+  __metaclass__ = abc.ABCMeta
 
   def __init__(self, *args, **kwargs):
     super(Worker, self).__init__(*args, **kwargs)
