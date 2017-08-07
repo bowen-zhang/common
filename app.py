@@ -32,7 +32,7 @@ class App(pattern.Logger, pattern.Closable):
   def name(self):
     return self._name
 
-  def init_logging(self, log_path):
+  def init_logging(self, log_path, console_handler=logging.StreamHandler()):
     if not os.path.isdir(log_path):
       os.makedirs(log_path)
 
@@ -61,12 +61,12 @@ class App(pattern.Logger, pattern.Closable):
     error.setFormatter(logfile_formatter)
     root.addHandler(error)
 
-    console = logging.StreamHandler()
-    log_level = getattr(logging, FLAGS.loglevel.upper(), None)
-    console.setLevel(log_level)
-    console.setFormatter(
-        logging.Formatter('%(levelname)-8s %(name)-12s: %(message)s'))
-    root.addHandler(console)
+    if console_handler:
+      log_level = getattr(logging, FLAGS.loglevel.upper(), None)
+      console_handler.setLevel(log_level)
+      console_handler.setFormatter(
+          logging.Formatter('%(levelname)-8s %(name)-12s: %(message)s'))
+      root.addHandler(console_handler)
 
   def close(self):
     self.logger.info('Exiting app...')

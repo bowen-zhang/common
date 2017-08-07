@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+import "google/protobuf/any.proto";
+
+package common;
+
+service Pubsub {
+  rpc Register(RegisterRequest) returns (RegisterResponse) {}
+  rpc Listen(ListenRequest) returns (stream ListenResponse) {}
+  rpc Dispatch(stream DispatchRequest) returns (DispatchResponse) {}
+}
+
+message RegisterRequest {
+}
+
+message RegisterResponse {
+  float timestamp = 1;
+}
+
+message ListenRequest {
+  repeated int32 topic_id = 2;
+}
+
+message ListenResponse {
+  Topic topic = 2;
+}
+
+message DispatchRequest {
+  Topic topic = 2;
+}
+
+message DispatchResponse {
+}
+
+message Topic {
+  int32 id = 1;
+  float timestamp = 2;
+  oneof data {
+    google.protobuf.Any message_value = 10;
+    string string_value = 11;
+    int32 integer_value = 12;
+    float float_value = 13;
+    bytes bytes_value = 14;
+  }
+}

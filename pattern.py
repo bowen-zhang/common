@@ -38,6 +38,9 @@ class EventEmitter(object):
 
 class Closable(object):
 
+  def __init__(self, *args, **kwargs):
+    super(Closable, self).__init__()
+
   def close(self):
     raise NotImplementedError()
 
