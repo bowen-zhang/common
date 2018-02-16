@@ -41,6 +41,12 @@ class Closable(object):
   def __init__(self, *args, **kwargs):
     super(Closable, self).__init__()
 
+  def __enter__(self):
+    return self
+
+  def __exit__(self, type, value, traceback):
+    self.close()
+
   def close(self):
     raise NotImplementedError()
 
