@@ -143,6 +143,7 @@ class Length(object):
 
 
 class Geolocation(object):
+
   def __init__(self, longitude, latitude, elevation=0):
     self._longitude = longitude
     self._latitude = latitude
@@ -176,13 +177,15 @@ class Geolocation(object):
     # haversine formula
     dlon = lon2 - lon1
     dlat = lat2 - lat1
-    a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+    a = math.sin(dlat / 2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(
+        dlon / 2)**2
     c = 2 * math.asin(math.sqrt(a))
-    r = 6371 # Radius of earth in kilometers. Use 3956 for miles
+    r = 6371  # Radius of earth in kilometers. Use 3956 for miles
     return Length(c * r, Length.KILOMETER)
 
   def __str__(self):
-    return '({0}, {1}) at {2}'.format(self.latitude, self.longitude, self.elevation)
+    return '({0}, {1}) at {2}'.format(self.latitude, self.longitude,
+                                      self.elevation)
 
 
 class Duration(object):
@@ -247,9 +250,8 @@ class Duration(object):
   def __str__(self):
     return '{0:0>2}:{1:0>2}:{2:0>2}.{3:0>3}'.format(
         int(self.hour),
-        int(self.minute)%60,
-        int(self.second)%60,
-        int(self.millisecond)%1000)
+        int(self.minute) % 60,
+        int(self.second) % 60, int(self.millisecond) % 1000)
 
   @staticmethod
   def from_epoch(datetime_obj):
@@ -308,6 +310,10 @@ class Speed(object):
   @property
   def fpm(self):
     return self._length.foot / self._duration.minute
+
+  @property
+  def mph(self):
+    return self._length.statute_mile / self._duration.hour
 
   @property
   def knots(self):
@@ -386,7 +392,7 @@ class Pressure(object):
   @property
   def millibar(self):
     return self._pressure / Pressure.PA_PER_MILLIBAR
-  
+
   def __cmp__(self, other):
     if isinstance(other, Pressure):
       return cmp(self._pressure, other._pressure)

@@ -1,5 +1,6 @@
-import datetime
 import ConfigParser
+import datetime
+import gflags
 import logging
 import os
 import signal
@@ -8,9 +9,10 @@ import time
 
 from common import pattern
 
-import gflags
-
 FLAGS = gflags.FLAGS
+
+gflags.DEFINE_boolean('log_to_file', False, 'Log to a timestamp-named file.')
+
 gflags.DEFINE_string(
     'loglevel', 'DEBUG',
     'Level of log to output, such as ERROR, WARNING, INFO, DEBUG.')
@@ -32,41 +34,44 @@ class App(pattern.Logger, pattern.Closable):
   def name(self):
     return self._name
 
-  def init_logging(self, log_path):
+  def init_logging(self, log_path, console_handler=logging.StreamHandler()):
     if not os.path.isdir(log_path):
       os.makedirs(log_path)
 
+    log_level = getattr(logging, FLAGS.loglevel.upper(), None)
+
     root = logging.getLogger('')
-    root.setLevel(logging.DEBUG)
+    root.setLevel(log_level)
     logfile_formatter = UTCFormatter(
         fmt='%(levelname)-8s %(asctime)s %(name)-12s %(message)s',
         datefmt='%m%d %H:%M:%S')
 
-    timestamp = '.{0:%Y%m%d.%H%M%S}'.format(datetime.datetime.utcnow())
-    debug = logging.FileHandler(
-        os.path.join(log_path, self.name + timestamp + '.all'))
-    debug.setLevel(logging.DEBUG)
-    debug.setFormatter(logfile_formatter)
-    root.addHandler(debug)
+    if FLAGS.log_to_file:
+      timestamp = '.{0:%Y%m%d.%H%M%S}'.format(datetime.datetime.utcnow())
+      debug = logging.FileHandler(
+          os.path.join(log_path, self.name + timestamp + '.all'))
+      debug.setLevel(logging.INFO)
+      debug.setFormatter(logfile_formatter)
+      root.addHandler(debug)
 
-    warning = logging.FileHandler(
-        os.path.join(log_path, self.name + timestamp + '.wrn'))
-    warning.setLevel(logging.WARNING)
-    warning.setFormatter(logfile_formatter)
-    root.addHandler(warning)
+      warning = logging.FileHandler(
+          os.path.join(log_path, self.name + timestamp + '.wrn'))
+      warning.setLevel(logging.WARNING)
+      warning.setFormatter(logfile_formatter)
+      root.addHandler(warning)
 
-    error = logging.FileHandler(
-        os.path.join(log_path, self.name + timestamp + '.err'))
-    error.setLevel(logging.ERROR)
-    error.setFormatter(logfile_formatter)
-    root.addHandler(error)
+      error = logging.FileHandler(
+          os.path.join(log_path, self.name + timestamp + '.err'))
+      error.setLevel(logging.ERROR)
+      error.setFormatter(logfile_formatter)
+      root.addHandler(error)
 
-    console = logging.StreamHandler()
-    log_level = getattr(logging, FLAGS.loglevel.upper(), None)
-    console.setLevel(log_level)
-    console.setFormatter(
-        logging.Formatter('%(levelname)-8s %(name)-12s: %(message)s'))
-    root.addHandler(console)
+    if console_handler:
+      log_level = getattr(logging, FLAGS.loglevel.upper(), None)
+      console_handler.setLevel(log_level)
+      console_handler.setFormatter(
+          logging.Formatter('%(levelname)-8s %(name)-12s: %(message)s'))
+      root.addHandler(console_handler)
 
   def close(self):
     self.logger.info('Exiting app...')

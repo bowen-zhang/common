@@ -1,3 +1,4 @@
+import abc
 import logging
 import sys
 import threading
@@ -6,7 +7,6 @@ import traceback
 
 
 class EventEmitter(object):
-
   def __init__(self, *args, **kwargs):
     super(EventEmitter, self).__init__()
     self._event_handlers = {}
@@ -31,18 +31,40 @@ class EventEmitter(object):
       for handler in self._event_handlers[event]:
         handler(*args, **kwargs)
 
+  def emit_after(self, delay, event, *args, **kwargs):
+    """Emits an event only after a delay.
+
+    Args:
+      delay: in seconds
+      event: event name to emit.
+      *args: unnamed arguments associated with the event.
+      **kwargs: named arguments associated with the event.
+    Returns:
+      threading.Timer() object. To cancel the emit, call .cancel().
+    """
+    t = threading.Timer(delay, self.emit, *args, **kwargs)
+    t.start()
+    return t
+
   def close(self):
     self._event_handlers = None
 
 
 class Closable(object):
+  def __init__(self, *args, **kwargs):
+    super(Closable, self).__init__()
+
+  def __enter__(self):
+    return self
+
+  def __exit__(self, type, value, traceback):
+    self.close()
 
   def close(self):
     raise NotImplementedError()
 
 
 class Singleton(object):
-
   @classmethod
   def get_instance(cls):
     if not hasattr(cls, '_singleton_instance'):
@@ -55,7 +77,6 @@ class Singleton(object):
 
 
 class Logger(object):
-
   def __init__(self, *args, **kwargs):
     super(Logger, self).__init__()
     self._logger = logging.getLogger(self.__class__.__name__)
@@ -66,6 +87,7 @@ class Logger(object):
 
 
 class Worker(Logger, Closable):
+  __metaclass__ = abc.ABCMeta
 
   def __init__(self, *args, **kwargs):
     super(Worker, self).__init__(*args, **kwargs)

@@ -1,8 +1,21 @@
 import datetime
-import retrying
 import os
+import retrying
+import subprocess
 
 from common import pattern
+
+
+def set_system_time(target):
+  """Sets system date time to target (requires root)
+
+  Args:
+    target: a datetime object.
+  """
+  subprocess.call(
+      ['sudo', 'date', '-s', target.strftime('%Y/%m/%d %H:%M:%S')],
+      stdout=subprocess.PIPE,
+      stderr=subprocess.PIPE)
 
 
 class ReplayClock(object):

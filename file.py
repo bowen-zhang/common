@@ -51,7 +51,7 @@ class ChunkFileReader(object):
     self._file_no = 0
     self._file = None
 
-  def read_file(self, size):
+  def read(self, size):
     data = ''
     while True:
       if self._file:
