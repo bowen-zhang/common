@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+package common;
+
+message Client {
+  string id = 1;
+}
+
+message Event {
+  Client client = 1;
+  int32 timestamp = 2;
+  string name = 3;
+}
+
+service EventService {
+  rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+  rpc Send(stream Event) returns (google.protobuf.Empty) {}
+  rpc Listen(Client) returns (stream Event) {}
+}

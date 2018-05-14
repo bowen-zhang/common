@@ -124,6 +124,7 @@ class Auth(_AuthBase):
   def _login_callback(self):
     resp = self._google.authorized_response()
     token = resp['access_token']
+    self.logger.debug('Logged in with token={0}'.format(token))
     flask.session['access_token'] = token
 
     redirect_url = flask.session['redirect_url']
@@ -138,4 +139,5 @@ class Auth(_AuthBase):
 
   def _authorize_by_token(self, token):
     user = self._google.get(url='userinfo', token=(token, '')).data
-    return user and self._auth_callback(user['email'])
+    self.logger.debug('User: {0}'.format(user))
+    return user and 'email' in user and self._auth_callback(user['email'])
