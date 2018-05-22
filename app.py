@@ -8,6 +8,7 @@ import sys
 import time
 
 from common import pattern
+from google.protobuf import text_format
 
 FLAGS = gflags.FLAGS
 
@@ -24,15 +25,30 @@ class UTCFormatter(logging.Formatter):
 
 class App(pattern.Logger, pattern.Closable):
 
-  def __init__(self, name, *args, **kwargs):
+  def __init__(self,
+               name,
+               config_path=None,
+               config_proto_cls=None,
+               *args,
+               **kwargs):
     super(App, self).__init__(*args, **kwargs)
 
     self._name = name
-    signal.signal(signal.SIGINT, self._signal_handler)
+    if config_path and config_proto_cls:
+      self._config = config_proto_cls()
+      with open(config_path, 'r') as f:
+        config_text = f.read()
+        text_format.Merge(config_text, self._config)
+    else:
+      self._config = None
 
   @property
   def name(self):
     return self._name
+
+  @property
+  def config(self):
+    return self._config
 
   def init_logging(self, log_path, console_handler=logging.StreamHandler()):
     if not os.path.isdir(log_path):

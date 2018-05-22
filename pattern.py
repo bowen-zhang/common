@@ -86,7 +86,21 @@ class Logger(object):
     return self._logger
 
 
-class Worker(Logger, Closable):
+class Startable(object):
+  __metaclass__ = abc.ABCMeta
+
+  def start(self):
+    pass
+
+
+class Stopable(object):
+  __metaclass__ = abc.ABCMeta
+
+  def stop(self):
+    pass
+
+
+class Worker(Logger, Closable, Startable, Stopable):
   __metaclass__ = abc.ABCMeta
 
   def __init__(self, *args, **kwargs):

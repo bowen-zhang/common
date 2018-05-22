@@ -21,8 +21,8 @@ class Feature2B(object):
 
 class User(object):
 
-  def __init__(self):
-    self._feature2 = inject.Feature('Feature2')
+  def __init__(self, broker):
+    self._feature2 = broker.require('Feature2')
 
   @property
   @inject.feature('Feature1')
@@ -35,8 +35,8 @@ class User(object):
 
 
 broker = inject.FeatureBroker.get_instance()
-broker.provide('Feature1', Feature1())
+broker.provide('Feature1', Feature1)
 broker.provide('Feature2', Feature2B())
 
-user = User()
+user = User(broker)
 user.run()

@@ -11,7 +11,7 @@ from common import event
 from common.proto import event_pb2
 from common.proto import event_pb2_grpc
 
-PORT = 9090
+PORT = 50051
 
 
 def run_server():
@@ -24,8 +24,8 @@ def run_server():
 
 def run_client():
   client_id = str(random.randint(0, 10000))
-  client = event.EventClient(
-      client_id=client_id, server_host='127.0.0.1', server_port=PORT)
+  channel = grpc.insecure_channel('127.0.0.1:{0}'.format(PORT))
+  client = event.EventClient(client_id=client_id, grpc_channel=channel)
   client.on('event', on_event)
   client.start()
   try:

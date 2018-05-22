@@ -70,10 +70,10 @@ class EventService(event_pb2_grpc.EventServiceServicer, pattern.Logger):
 
 
 class EventClient(pattern.EventEmitter, pattern.Worker):
-  def __init__(self, client_id, server_host, server_port, *args, **kwargs):
+  def __init__(self, client_id, grpc_channel, *args, **kwargs):
     super(EventClient, self).__init__(*args, **kwargs)
     self._client_id = event_pb2.Client(id=client_id)
-    self._target = '{0}:{1}'.format(server_host, server_port)
+    self._grpc_channel = grpc_channel
     self._stub = None
     self._listen_response = None
     self._send_future = None
@@ -102,10 +102,9 @@ class EventClient(pattern.EventEmitter, pattern.Worker):
       self._disconnect()
 
   def _connect(self):
-    self.logger.info('Connecting to {0}...'.format(self._target))
+    self.logger.info('Connecting...')
 
-    channel = grpc.insecure_channel(self._target)
-    self._stub = event_pb2_grpc.EventServiceStub(channel)
+    self._stub = event_pb2_grpc.EventServiceStub(self._grpc_channel)
     try:
       self._stub.Ping(empty_pb2.Empty())
     except grpc.RpcError as e:
