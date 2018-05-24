@@ -2,7 +2,6 @@ from common import pattern
 
 
 class _Feature(object):
-
   def __init__(self, feature_name, feature_provider, feature_singleton, *args,
                **kwargs):
     self._name = feature_name
@@ -32,19 +31,26 @@ class FeatureBrokerException(Exception):
 
 
 class FeatureBroker(pattern.Singleton):
-
   def __init__(self, *args, **kwargs):
     super(FeatureBroker, self).__init__(*args, **kwargs)
     self._features = {}
 
-  def provide(self,
-              feature_name,
-              feature_provider,
-              feature_singleton=False,
-              *args,
-              **kwargs):
-    feature = _Feature(feature_name, feature_provider, feature_singleton,
-                       *args, **kwargs)
+  def provide(self, feature_name, feature_provider, *args, **kwargs):
+    feature = _Feature(
+        feature_name,
+        feature_provider,
+        feature_singleton=False,
+        *args,
+        **kwargs)
+    self._features[feature_name] = feature
+
+  def provide_one(self, feature_name, feature_provider, *args, **kwargs):
+    feature = _Feature(
+        feature_name,
+        feature_provider,
+        feature_singleton=True,
+        *args,
+        **kwargs)
     self._features[feature_name] = feature
 
   def require(self, feature_name, lazy_creation=True):
@@ -63,7 +69,6 @@ class FeatureBroker(pattern.Singleton):
 
 
 class _FeatureStub(object):
-
   def __init__(self, broker, name):
     self._broker = broker
     self._name = name
@@ -81,9 +86,7 @@ class _FeatureStub(object):
 
 
 def feature(name):
-
   def outter_wrapper(f):
-
     def inner_wrapper(self, *args):
       if not hasattr(self, '_feature_instances'):
         self._feature_instances = {}

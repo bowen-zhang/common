@@ -24,7 +24,6 @@ class UTCFormatter(logging.Formatter):
 
 
 class App(pattern.Logger, pattern.Closable):
-
   def __init__(self,
                name,
                config_path=None,
@@ -41,6 +40,8 @@ class App(pattern.Logger, pattern.Closable):
         text_format.Merge(config_text, self._config)
     else:
       self._config = None
+
+    signal.signal(signal.SIGINT, self._signal_handler)
 
   @property
   def name(self):
@@ -103,7 +104,6 @@ class App(pattern.Logger, pattern.Closable):
 
 
 class Config(object):
-
   def __init__(self, config_path, default_section=None):
     self._config = ConfigParser.ConfigParser()
     self._config.read(config_path)
