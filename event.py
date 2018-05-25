@@ -1,14 +1,14 @@
+import Queue
 import grpc
 import retrying
-import Queue
 import threading
 import time
 
 from common import auth
 from common import pattern
-from google.protobuf import empty_pb2
 from common.proto import event_pb2
 from common.proto import event_pb2_grpc
+from google.protobuf import empty_pb2
 
 
 class _ClientInfo(object):
@@ -37,10 +37,9 @@ class EventService(event_pb2_grpc.EventServiceServicer, pattern.Logger):
           event.client.id, event.name))
       with self._lock:
         for client_id, client_info in self._clients.iteritems():
-          if event.client.id != client_id:
-            if client_info.events.full():
-              client_info.events.get()
-            client_info.events.put(event)
+          if client_info.events.full():
+            client_info.events.get()
+          client_info.events.put(event)
     return empty_pb2.Empty()
 
   def Listen(self, client_id, context):
@@ -72,7 +71,7 @@ class EventService(event_pb2_grpc.EventServiceServicer, pattern.Logger):
 class EventClient(pattern.EventEmitter, pattern.Worker):
   def __init__(self, client_id, grpc_channel, *args, **kwargs):
     super(EventClient, self).__init__(*args, **kwargs)
-    self._client_id = event_pb2.Client(id=client_id)
+    self._client = event_pb2.Client(id=client_id)
     self._grpc_channel = grpc_channel
     self._stub = None
     self._listen_response = None
@@ -82,6 +81,7 @@ class EventClient(pattern.EventEmitter, pattern.Worker):
   def send(self, name):
     if self._events:
       self._events.put(name)
+    self.emit('event', self._client.id, name)
 
   def _on_start(self):
     self._connect()
@@ -90,16 +90,16 @@ class EventClient(pattern.EventEmitter, pattern.Worker):
     self._disconnect()
 
   def _on_run(self):
-    self._sleep(5)
-
     if not self._stub:
-      if not self._connect():
-        return
+      self._connect()
 
-    try:
-      self._stub.Ping(empty_pb2.Empty())
-    except:
-      self._disconnect()
+    if self._stub:
+      try:
+        self._stub.Ping(empty_pb2.Empty())
+      except:
+        self._disconnect()
+
+    self._sleep(5)
 
   def _connect(self):
     self.logger.info('Connecting...')
@@ -118,7 +118,7 @@ class EventClient(pattern.EventEmitter, pattern.Worker):
     self.logger.info('Connected')
     self._events = Queue.Queue(maxsize=100)
     self._send_future = self._stub.Send.future(self._get_events())
-    self._listen_response = self._stub.Listen(self._client_id)
+    self._listen_response = self._stub.Listen(self._client)
     threading.Thread(target=self._listen).start()
     return True
 
@@ -141,7 +141,8 @@ class EventClient(pattern.EventEmitter, pattern.Worker):
     self.logger.debug('Starting to listen...')
     try:
       for event in self._listen_response:
-        self.emit('event', event.client.id, event.name)
+        if event.client.id != self._client.id:
+          self.emit('event', event.client.id, event.name)
     except grpc.RpcError as e:
       if e.code() == grpc.StatusCode.UNAVAILABLE:
         self.logger.error('Server disconnected.')
@@ -158,6 +159,6 @@ class EventClient(pattern.EventEmitter, pattern.Worker):
       name = self._events.get(block=True)
       if name:
         yield event_pb2.Event(
-            client=self._client_id, timestamp=int(time.time()), name=name)
+            client=self._client, timestamp=int(time.time()), name=name)
 
     self.logger.error('Stopped sending.')
