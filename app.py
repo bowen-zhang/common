@@ -2,6 +2,7 @@ import ConfigParser
 import datetime
 import gflags
 import logging
+import threading
 import os
 import signal
 import sys
@@ -24,6 +25,7 @@ class UTCFormatter(logging.Formatter):
 
 
 class App(pattern.Logger, pattern.Closable):
+
   def __init__(self,
                name,
                config_path=None,
@@ -100,10 +102,13 @@ class App(pattern.Logger, pattern.Closable):
 
   def _signal_handler(self, signal, frame):
     self.logger.warn('Aborting...')
+    for thread in threading.enumerate():
+      self.logger.debug('Thread: ("{0}")'.format(thread.name))
     self.shutdown(-1)
 
 
 class Config(object):
+
   def __init__(self, config_path, default_section=None):
     self._config = ConfigParser.ConfigParser()
     self._config.read(config_path)

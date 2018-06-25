@@ -7,6 +7,7 @@ import traceback
 
 
 class EventEmitter(object):
+
   def __init__(self, *args, **kwargs):
     super(EventEmitter, self).__init__()
     self._event_handlers = {}
@@ -51,6 +52,7 @@ class EventEmitter(object):
 
 
 class Closable(object):
+
   def __init__(self, *args, **kwargs):
     super(Closable, self).__init__()
 
@@ -65,6 +67,7 @@ class Closable(object):
 
 
 class Singleton(object):
+
   @classmethod
   def get_instance(cls):
     if not hasattr(cls, '_singleton_instance'):
@@ -77,6 +80,7 @@ class Singleton(object):
 
 
 class Logger(object):
+
   def __init__(self, *args, **kwargs):
     super(Logger, self).__init__()
     self._logger = logging.getLogger(self.__class__.__name__)
@@ -100,57 +104,60 @@ class Stopable(object):
     pass
 
 
-class Worker(Logger, Closable, Startable, Stopable):
-  __metaclass__ = abc.ABCMeta
+class Worker(Startable, Stopable, Closable, Logger):
+  """Base class to support background thread."""
 
-  def __init__(self, *args, **kwargs):
+  def __init__(self, worker_name=None, *args, **kwargs):
     super(Worker, self).__init__(*args, **kwargs)
-    self._thread = None
+    self._worker_name = worker_name if worker_name else self.__class__.__name__
+    self._worker_thread = None
+    self._abort_event = threading.Event()
 
   @property
   def is_running(self):
-    return self._thread and self._thread.is_alive()
+    return self._worker_thread and self._worker_thread.is_alive()
 
   def start(self):
-    assert not self.is_running
+    if self._worker_thread and self._worker_thread.is_alive():
+      return
 
-    self._abort = False
-    self._thread = threading.Thread(target=self._run)
-    self._thread.daemon = True
-    self._thread.start()
-
-  def wait(self):
-    if self.is_running:
-      self._thread.join()
+    self._abort_event.clear()
+    self._worker_thread = threading.Thread(
+        name=self._worker_name, target=self._run)
+    self._worker_thread.daemon = True
+    self._worker_thread.start()
 
   def stop(self):
-    self._abort = True
-    if self._thread:
-      if threading.current_thread() != self._thread:
-        self._thread.join()
-      self._thread = None
+    if not self._worker_thread:
+      return
+
+    if not self._worker_thread.is_alive():
+      self._worker_thread = None
+      return
+
+    self._abort_event.set()
+    self._worker_thread.join()
+    self._worker_thread = None
 
   def close(self):
-    self.logger.debug('Closing...')
-    if self.is_running:
-      self.stop()
-    self.logger.debug('Closed.')
+    self.stop()
 
   def _run(self):
     if self._on_start() == False:
       self._on_stop()
       return
 
-    while not self._abort:
+    while not self._abort_event.is_set():
       try:
         if self._on_run() == False:
           break
-      except:
+      except Exception as e:
         try:
           exc_type, exc_value, exc_traceback = sys.exc_info()
           msg = traceback.format_exception(exc_type, exc_value, exc_traceback)
           self.logger.warn('\n'.join(msg))
         except:
+          self.logger.warn('Exception: {0}'.format(e))
           pass
 
     self._on_stop()
@@ -159,14 +166,10 @@ class Worker(Logger, Closable, Startable, Stopable):
     pass
 
   def _on_run(self):
-    time.sleep(1)
+    self._sleep(1)
 
   def _on_stop(self):
     pass
 
   def _sleep(self, seconds):
-    while not self._abort and seconds > 1:
-      time.sleep(1)
-      seconds -= 1
-    if not self._abort and seconds > 0:
-      time.sleep(seconds)
+    self._abort_event.wait(seconds)

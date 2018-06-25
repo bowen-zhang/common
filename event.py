@@ -12,6 +12,7 @@ from google.protobuf import empty_pb2
 
 
 class _ClientInfo(object):
+
   def __init__(self):
     self._events = Queue.Queue(maxsize=100)
 
@@ -20,13 +21,18 @@ class _ClientInfo(object):
     return self._events
 
 
-class EventService(event_pb2_grpc.EventServiceServicer, pattern.Logger):
+class EventService(event_pb2_grpc.EventServiceServicer, pattern.Logger,
+                   pattern.Closable):
+
   def __init__(self, server, *args, **kwargs):
     super(EventService, self).__init__(*args, **kwargs)
     self._clients = {}
     self._lock = threading.Lock()
 
     event_pb2_grpc.add_EventServiceServicer_to_server(self, server)
+
+  def close(self):
+    super(EventService, self).close()
 
   def Ping(self, request, context):
     return empty_pb2.Empty()
@@ -69,6 +75,7 @@ class EventService(event_pb2_grpc.EventServiceServicer, pattern.Logger):
 
 
 class EventClient(pattern.EventEmitter, pattern.Worker):
+
   def __init__(self, client_id, grpc_channel, *args, **kwargs):
     super(EventClient, self).__init__(*args, **kwargs)
     self._client = event_pb2.Client(id=client_id)
@@ -119,7 +126,7 @@ class EventClient(pattern.EventEmitter, pattern.Worker):
     self._events = Queue.Queue(maxsize=100)
     self._send_future = self._stub.Send.future(self._get_events())
     self._listen_response = self._stub.Listen(self._client)
-    threading.Thread(target=self._listen).start()
+    threading.Thread(name='EventClient', target=self._listen).start()
     return True
 
   def _disconnect(self):

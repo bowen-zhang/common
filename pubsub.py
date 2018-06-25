@@ -1,13 +1,14 @@
+import Queue
 import abc
 import datetime
-from concurrent import futures
 import enum
 import grpc
-import Queue
-import threading
-import traceback
-import time
 import sys
+import threading
+import time
+import traceback
+
+from concurrent import futures
 
 from google.protobuf.internal import python_message
 
@@ -329,8 +330,10 @@ class PubsubClient(pattern.Logger):
     self._register()
 
     self._abort = False
-    self._dispatch_thread = threading.Thread(target=self._dispatch)
-    self._listen_thread = threading.Thread(target=self._listen)
+    self._dispatch_thread = threading.Thread(
+        name='PubsubClient.Dispatch', target=self._dispatch)
+    self._listen_thread = threading.Thread(
+        target='PubsubClient.Listen', self._listen)
     self._dispatch_thread.start()
     self._listen_thread.start()
 
