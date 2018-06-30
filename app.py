@@ -2,10 +2,10 @@ import ConfigParser
 import datetime
 import gflags
 import logging
-import threading
 import os
 import signal
 import sys
+import threading
 import time
 
 from common import pattern
@@ -16,7 +16,7 @@ FLAGS = gflags.FLAGS
 gflags.DEFINE_boolean('log_to_file', False, 'Log to a timestamp-named file.')
 
 gflags.DEFINE_string(
-    'loglevel', 'DEBUG',
+    'loglevel', 'ERROR',
     'Level of log to output, such as ERROR, WARNING, INFO, DEBUG.')
 
 
