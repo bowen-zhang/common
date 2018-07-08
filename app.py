@@ -16,7 +16,7 @@ FLAGS = gflags.FLAGS
 gflags.DEFINE_boolean('log_to_file', False, 'Log to a timestamp-named file.')
 
 gflags.DEFINE_string(
-    'loglevel', 'ERROR',
+    'loglevel', 'INFO',
     'Level of log to output, such as ERROR, WARNING, INFO, DEBUG.')
 
 
@@ -25,7 +25,6 @@ class UTCFormatter(logging.Formatter):
 
 
 class App(pattern.Logger, pattern.Closable):
-
   def __init__(self,
                name,
                config_path=None,
@@ -108,7 +107,6 @@ class App(pattern.Logger, pattern.Closable):
 
 
 class Config(object):
-
   def __init__(self, config_path, default_section=None):
     self._config = ConfigParser.ConfigParser()
     self._config.read(config_path)

@@ -1,4 +1,5 @@
 import datetime
+import ephem
 import os
 import retrying
 import subprocess
@@ -13,13 +14,13 @@ def set_system_time(target):
     target: a datetime object.
   """
   subprocess.call(
-      ['sudo', 'date', '-s', target.strftime('%Y/%m/%d %H:%M:%S')],
+      ['sudo', 'date', '-s',
+       target.strftime('%Y/%m/%d %H:%M:%S')],
       stdout=subprocess.PIPE,
       stderr=subprocess.PIPE)
 
 
 class ReplayClock(object):
-
   def __init__(self, start_time, speed):
     self._start_time = start_time
     self._speed = speed
@@ -32,11 +33,66 @@ class ReplayClock(object):
     return self._start_time + elapsed
 
 
+class Clock(object):
+  def __init__(self, *args, **kwargs):
+    self._last_location = None
+    self._last_date = None
+    self._sunrise = None
+    self._sunset = None
+
+  @property
+  def utc(self):
+    raise NotImplementedError()
+
+  @property
+  def local_time(self):
+    raise NotImplementedError()
+
+  @property
+  def sunrise(self):
+    self._update_sunrise_sunset()
+    return self._sunrise
+
+  @property
+  def sunrise(self):
+    self._update_sunrise_sunset()
+    return self._sunset
+
+  def _get_location(self):
+    """Gets current location on earth for local time calculation.
+
+    Returns:
+      (latitude, longitude, elevation)
+    """
+    raise NotImplementedError()
+
+  def _update_sunrise_sunset(self):
+    location = self._get_location()
+    date = local_time.strftime('%Y/%m/%d')
+    if self._last_location != location or self._last_date != date:
+      ob = ephem.Observer()
+      ob.date = date
+      ob.lat, ob.lon, ob.elevation = (str(location.lat), str(location.lon),
+                                      location.elevation)
+      sun = ephem.Sun()
+      self._sunrise = ob.next_rising(sun)
+      self._sunset = somewhere.next_setting(sun)
+
+
 class SystemClock(object):
+  def __init__(self, lat=None, lon=None, elevation=None):
+    self._location = (lat, lon, elevation)
+
+  def _get_location(self):
+    return self._location
 
   @property
   def utc(self):
     return datetime.datetime.utcnow()
+
+  @property
+  def local_time(self):
+    return datetime.datetime.now()
 
 
 class GpsClock(pattern.Logger):
@@ -81,3 +137,6 @@ class GpsClock(pattern.Logger):
     if diff > self.__class__.THRESHOLD or diff < -self.__class__.THRESHOLD:
       self.logger.debug('GPS and local time not match.')
       raise Exception('GPS and local time not match.')
+
+  def _get_location(self):
+    return (self._gps.latitude, self._gps.longitude, self._gps.altitude)
