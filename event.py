@@ -12,7 +12,6 @@ from google.protobuf import empty_pb2
 
 
 class _ClientInfo(object):
-
   def __init__(self):
     self._events = Queue.Queue(maxsize=100)
 
@@ -23,7 +22,6 @@ class _ClientInfo(object):
 
 class EventService(event_pb2_grpc.EventServiceServicer, pattern.Logger,
                    pattern.Closable):
-
   def __init__(self, server, *args, **kwargs):
     super(EventService, self).__init__(*args, **kwargs)
     self._clients = {}
@@ -75,7 +73,6 @@ class EventService(event_pb2_grpc.EventServiceServicer, pattern.Logger,
 
 
 class EventClient(pattern.EventEmitter, pattern.Worker):
-
   def __init__(self, client_id, grpc_channel, *args, **kwargs):
     super(EventClient, self).__init__(*args, **kwargs)
     self._client = event_pb2.Client(id=client_id)
@@ -130,6 +127,7 @@ class EventClient(pattern.EventEmitter, pattern.Worker):
     return True
 
   def _disconnect(self):
+    self.logger.info('Disconnecting...')
     self._stub = None
 
     # Stopping transmitting call
@@ -143,6 +141,7 @@ class EventClient(pattern.EventEmitter, pattern.Worker):
       self._listen_response = None
 
     self._events = None
+    self.logger.info('Disconnected.')
 
   def _listen(self):
     self.logger.debug('Starting to listen...')
