@@ -74,15 +74,20 @@ class _FeatureStub(object):
     self._name = name
     self._instance = None
 
-  def __get__(self, obj, T):
+  @property
+  def instance(self):
     if not self._instance:
       self._instance = self._broker[self._name]
     return self._instance
 
+  def __get__(self, obj, T):
+    return self.instance
+
   def __getattr__(self, name):
-    if not self._instance:
-      self._instance = self._broker[self._name]
-    return getattr(self._instance, name)
+    return getattr(self.instance, name)
+
+  def __getitem__(self, name):
+    return self.instance[name]
 
 
 def feature(name):

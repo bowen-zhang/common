@@ -54,7 +54,7 @@ class Clock(object):
     return self._sunrise
 
   @property
-  def sunrise(self):
+  def sunset(self):
     self._update_sunrise_sunset()
     return self._sunset
 
@@ -68,19 +68,22 @@ class Clock(object):
 
   def _update_sunrise_sunset(self):
     location = self._get_location()
-    date = local_time.strftime('%Y/%m/%d')
+    date = self.local_time.strftime('%Y/%m/%d')
     if self._last_location != location or self._last_date != date:
       ob = ephem.Observer()
       ob.date = date
-      ob.lat, ob.lon, ob.elevation = (str(location.lat), str(location.lon),
-                                      location.elevation)
+      ob.lat, ob.lon, ob.elevation = (str(location[0]), str(location[1]),
+                                      location[2])
       sun = ephem.Sun()
-      self._sunrise = ob.next_rising(sun)
-      self._sunset = somewhere.next_setting(sun)
+      self._sunrise = ob.next_rising(sun).datetime()
+      self._sunset = ob.next_setting(sun).datetime()
+      self._last_location = location
+      self._last_date = date
 
 
-class SystemClock(object):
-  def __init__(self, lat=None, lon=None, elevation=None):
+class SystemClock(Clock):
+  def __init__(self, lat=None, lon=None, elevation=None, *args, **kwargs):
+    super(SystemClock, self).__init__(*args, **kwargs)
     self._location = (lat, lon, elevation)
 
   def _get_location(self):
@@ -95,7 +98,7 @@ class SystemClock(object):
     return datetime.datetime.now()
 
 
-class GpsClock(pattern.Logger):
+class GpsClock(Clock, pattern.Logger):
   MIN_TIME = datetime.datetime(2017, 1, 1, 0, 0, 0)
   THRESHOLD = datetime.timedelta(seconds=60)
 
