@@ -21,16 +21,21 @@ class _ClientInfo(object):
 
 
 class EventService(event_pb2_grpc.EventServiceServicer, pattern.Logger,
-                   pattern.Closable):
+                   pattern.Stopable):
   def __init__(self, server, *args, **kwargs):
     super(EventService, self).__init__(*args, **kwargs)
     self._clients = {}
     self._lock = threading.Lock()
+    self._abort = False
 
     event_pb2_grpc.add_EventServiceServicer_to_server(self, server)
 
-  def close(self):
-    super(EventService, self).close()
+  def stop(self):
+    self._abort = True
+    with self._lock:
+      for client in self._clients:
+        client.events.put(None)
+    super(EventService, self).stop()
 
   def Ping(self, request, context):
     return empty_pb2.Empty()
@@ -56,9 +61,11 @@ class EventService(event_pb2_grpc.EventServiceServicer, pattern.Logger,
       events = self._clients[client_id.id].events
 
     try:
-      while context.is_active():
+      while context.is_active() and not self._abort:
         try:
-          yield events.get(block=True, timeout=60)
+          event = events.get(block=True, timeout=5)
+          if event:
+            yield event
         except Queue.Empty as e:
           pass
     except Exception as e:
