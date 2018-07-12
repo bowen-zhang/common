@@ -21,6 +21,7 @@ def set_system_time(target):
 
 
 class ReplayClock(object):
+
   def __init__(self, start_time, speed):
     self._start_time = start_time
     self._speed = speed
@@ -34,6 +35,7 @@ class ReplayClock(object):
 
 
 class Clock(object):
+
   def __init__(self, *args, **kwargs):
     self._last_location = None
     self._last_date = None
@@ -68,20 +70,35 @@ class Clock(object):
 
   def _update_sunrise_sunset(self):
     location = self._get_location()
-    date = self.local_time.strftime('%Y/%m/%d')
+    now = self.local_time
+    date = now.strftime('%Y/%m/%d')
     if self._last_location != location or self._last_date != date:
+      offset = self.utc - now
       ob = ephem.Observer()
       ob.date = date
       ob.lat, ob.lon, ob.elevation = (str(location[0]), str(location[1]),
                                       location[2])
       sun = ephem.Sun()
-      self._sunrise = ob.next_rising(sun).datetime()
-      self._sunset = ob.next_setting(sun).datetime()
+      time = ob.next_rising(sun).datetime() - offset
+      self._sunrise = datetime.datetime(
+          year=now.year,
+          month=now.month,
+          day=now.day,
+          hour=time.hour,
+          minute=time.minute)
+      time = ob.next_setting(sun).datetime() - offset
+      self._sunset = datetime.datetime(
+          year=now.year,
+          month=now.month,
+          day=now.day,
+          hour=time.hour,
+          minute=time.minute)
       self._last_location = location
       self._last_date = date
 
 
 class SystemClock(Clock):
+
   def __init__(self, lat=None, lon=None, elevation=None, *args, **kwargs):
     super(SystemClock, self).__init__(*args, **kwargs)
     self._location = (lat, lon, elevation)
