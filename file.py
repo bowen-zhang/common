@@ -1,5 +1,11 @@
 import datetime
+import glob
 import os
+
+
+def delete_files(pattern):
+  for filepath in glob.iglob(pattern):
+    os.remove(filepath)
 
 
 class ChunkFileWriter(object):
@@ -89,14 +95,12 @@ class TimedFile(object):
 
   @property
   def name(self):
-    if self.has_changed():
-      self._update()
     return self._filepath
 
-  def has_changed(self):
+  def expired(self):
     return datetime.datetime.now() >= self._expiration
 
-  def _update(self):
+  def refresh(self):
     now = datetime.datetime.now()
     midnight = datetime.datetime(now.year, now.month, now.day, 0, 0, 0)
     elapsed = now - midnight
