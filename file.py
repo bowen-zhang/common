@@ -1,5 +1,11 @@
 import datetime
+import glob
 import os
+
+
+def delete_files(pattern):
+  for filepath in glob.iglob(pattern):
+    os.remove(filepath)
 
 
 class ChunkFileWriter(object):
@@ -43,7 +49,6 @@ class ChunkFileWriter(object):
 
 
 class ChunkFileReader(object):
-
   def __init__(self, filepath, file_mode='r'):
     self._path, basename = os.path.split(filepath)
     self._filename, self._ext = os.path.splitext(basename)
@@ -69,7 +74,7 @@ class ChunkFileReader(object):
         filepath = os.path.join(self._path, filename)
         if not os.path.isfile(filepath):
           return None
-        print filepath
+        print(filepath)
         self._file = open(filepath, self._file_mode)
 
   def close(self):
@@ -79,7 +84,6 @@ class ChunkFileReader(object):
 
 
 class TimedFile(object):
-
   def __init__(self, path, extension, interval, prefix=None, postfix=None):
     self._path = path
     self._extension = extension
@@ -91,14 +95,12 @@ class TimedFile(object):
 
   @property
   def name(self):
-    if self.has_changed():
-      self._update()
     return self._filepath
 
-  def has_changed(self):
+  def expired(self):
     return datetime.datetime.now() >= self._expiration
 
-  def _update(self):
+  def refresh(self):
     now = datetime.datetime.now()
     midnight = datetime.datetime(now.year, now.month, now.day, 0, 0, 0)
     elapsed = now - midnight
@@ -108,6 +110,23 @@ class TimedFile(object):
     self._expiration = midnight + datetime.timedelta(
         seconds=self._interval.total_seconds() * (cycles + 1))
 
-    filename = '{0}{1:%H%M%S}{2}.{3}'.format(self._prefix, timestamp,
-                                             self._postfix, self._extension)
+    filename = '{0}{1:%Y%m%dT%H%M%S}{2}.{3}'.format(
+        self._prefix, timestamp, self._postfix, self._extension)
     self._filepath = os.path.join(self._path, filename)
+
+
+class BucketManager(object):
+  def __init__(self, path, max_size):
+    self._path = path
+    self._max_size = max_size
+
+  def cleanup(self):
+    filenames = os.listdir(self._path)
+    filepaths = [os.path.join(self._path, x) for x in filenames]
+    filepaths = [x for x in filepaths if os.path.isfile(x)]
+    filepaths.sort(key=lambda x: os.path.getctime(x), reverse=True)
+    size = 0
+    for filepath in filepaths:
+      size += os.path.getsize(filepath)
+      if size > self._max_size:
+        os.remove(filepath)
