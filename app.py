@@ -1,6 +1,5 @@
 import configparser
 import datetime
-import gflags
 import logging
 import os
 import signal
@@ -8,14 +7,15 @@ import sys
 import threading
 import time
 
+from absl import flags
 from common import pattern
 from google.protobuf import text_format
 
-FLAGS = gflags.FLAGS
+FLAGS = flags.FLAGS
 
-gflags.DEFINE_boolean('log_to_file', False, 'Log to a timestamp-named file.')
+flags.DEFINE_boolean('log_to_file', False, 'Log to a timestamp-named file.')
 
-gflags.DEFINE_string(
+flags.DEFINE_string(
     'loglevel', 'INFO',
     'Level of log to output, such as ERROR, WARNING, INFO, DEBUG.')
 
