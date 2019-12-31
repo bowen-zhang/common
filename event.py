@@ -1,4 +1,4 @@
-import Queue
+import queue
 import grpc
 import retrying
 import threading
@@ -13,7 +13,7 @@ from google.protobuf import empty_pb2
 
 class _ClientInfo(object):
   def __init__(self):
-    self._events = Queue.Queue(maxsize=100)
+    self._events = queue.Queue(maxsize=100)
 
   @property
   def events(self):
@@ -45,7 +45,7 @@ class EventService(event_pb2_grpc.EventServiceServicer, pattern.Logger,
       self.logger.debug('Broadcasting event: [{0}] "{1}"...'.format(
           event.client.id, event.name))
       with self._lock:
-        for client_id, client_info in self._clients.iteritems():
+        for client_id, client_info in self._clients.items():
           if client_info.events.full():
             client_info.events.get()
           client_info.events.put(event)
@@ -66,10 +66,10 @@ class EventService(event_pb2_grpc.EventServiceServicer, pattern.Logger,
           event = events.get(block=True, timeout=5)
           if event:
             yield event
-        except Queue.Empty as e:
+        except queue.Empty as e:
           pass
     except Exception as e:
-      print e
+      print(e)
       with self._lock:
         if client_id.id in self._clients:
           self.logger.debug('Removing client {0}...'.format(client_id.id))
@@ -127,7 +127,7 @@ class EventClient(pattern.EventEmitter, pattern.Worker):
         raise
 
     self.logger.info('Connected')
-    self._events = Queue.Queue(maxsize=100)
+    self._events = queue.Queue(maxsize=100)
     self._send_future = self._stub.Send.future(self._get_events())
     self._listen_response = self._stub.Listen(self._client)
     threading.Thread(name='EventClient', target=self._listen).start()

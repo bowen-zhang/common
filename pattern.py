@@ -86,16 +86,12 @@ class Logger(object):
     return self._logger
 
 
-class Startable(object):
-  __metaclass__ = abc.ABCMeta
-
+class Startable(object, metaclass=abc.ABCMeta):
   def start(self):
     pass
 
 
-class Stopable(object):
-  __metaclass__ = abc.ABCMeta
-
+class Stopable(object, metaclass=abc.ABCMeta):
   def stop(self):
     pass
 

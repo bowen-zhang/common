@@ -19,7 +19,7 @@ def run_server():
   monitoring_service = event.EventService(server=server)
   server.add_insecure_port('[::]:{0}'.format(PORT))
   server.start()
-  raw_input()
+  input()
 
 
 def run_client():
@@ -30,14 +30,14 @@ def run_client():
   client.start()
   try:
     while True:
-      client.send(raw_input('Event name:'))
+      client.send(input('Event name:'))
   finally:
-    print 'Stopping...'
+    print('Stopping...')
     client.stop()
 
 
 def on_event(client_id, name):
-  print '[{0}] {1}'.format(client_id, name)
+  print('[{0}] {1}'.format(client_id, name))
 
 
 def main(argv=None):

@@ -4,7 +4,7 @@ import os
 import unittest
 from unittest import mock
 
-import file
+from . import file
 
 File = collections.namedtuple('File', ['name', 'create_time', 'size'])
 
@@ -30,7 +30,7 @@ class BucketManagerTests(unittest.TestCase):
         File('2.txt', datetime.datetime(2019, 1, 1, 1, 0, 0), 2),
         File('3.txt', datetime.datetime(2019, 1, 1, 2, 0, 0), 6),
     ])
-    mock_os_listdir.return_value=[x.name for x in files.values()]
+    mock_os_listdir.return_value=[x.name for x in list(files.values())]
     mock_os_path_isfile.return_value = True
     mock_os_path_getctime.side_effect = lambda path: files[path].create_time
     mock_os_path_getsize.side_effect = lambda path: files[path].size
@@ -56,7 +56,7 @@ class BucketManagerTests(unittest.TestCase):
         File('3.txt', datetime.datetime(2019, 1, 1, 2, 0, 0), 5),
         File('4.txt', datetime.datetime(2019, 1, 1, 3, 0, 0), 6),
     ])
-    mock_os_listdir.return_value=[x.name for x in files.values()]
+    mock_os_listdir.return_value=[x.name for x in list(files.values())]
     mock_os_path_isfile.return_value = True
     mock_os_path_getctime.side_effect = lambda path: files[path].create_time
     mock_os_path_getsize.side_effect = lambda path: files[path].size

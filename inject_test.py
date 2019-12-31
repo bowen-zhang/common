@@ -4,19 +4,19 @@ from common import inject
 class Feature1(object):
 
   def run(self):
-    print 'feature 1'
+    print('feature 1')
 
 
 class Feature2A(object):
 
   def run(self):
-    print 'feature 2(a)'
+    print('feature 2(a)')
 
 
 class Feature2B(object):
 
   def run(self):
-    print 'feature 2(b)'
+    print('feature 2(b)')
 
 
 class User(object):

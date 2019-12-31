@@ -1,7 +1,7 @@
 import flask
 import functools
 import json
-import urlparse
+import urllib.parse
 from flask_oauthlib import client
 
 from common import pattern
@@ -111,7 +111,7 @@ class Auth(_AuthBase):
     self._google.tokengetter(self.get_token)
 
     self.logger.debug('Configuring authentication for flask...')
-    url = urlparse.urlparse(options.callback_url)
+    url = urllib.parse.urlparse(options.callback_url)
     web.secret_key = options.session_secret
     web.add_url_rule('/login', endpoint='login', view_func=self._login)
     web.add_url_rule(url.path, view_func=self._login_callback)
@@ -128,7 +128,7 @@ class Auth(_AuthBase):
     flask.session['access_token'] = token
 
     redirect_url = flask.session['redirect_url']
-    print 'Redirect:' + redirect_url
+    print('Redirect:' + redirect_url)
     if redirect_url:
       return flask.redirect(redirect_url)
     else:

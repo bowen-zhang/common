@@ -1,4 +1,4 @@
-import Queue
+import queue
 import abc
 import datetime
 import enum
@@ -142,7 +142,7 @@ class _PubsubReceiver(Subscriber):
   def __init__(self, topic_ids, *args, **kwargs):
     super(_PubsubReceiver, self).__init__(*args, **kwargs)
     self._topic_ids = topic_ids
-    self._topics = Queue.Queue(maxsize=1000)
+    self._topics = queue.Queue(maxsize=1000)
 
   @property
   def topics(self):
@@ -169,7 +169,7 @@ class _PubsubReceiver(Subscriber):
     while True:
       try:
         self._topics.get(block=False)
-      except Queue.Empty:
+      except queue.Empty:
         break
 
   def _on_topic(self, topic_id, data):
@@ -199,7 +199,7 @@ class _PubsubReceiver(Subscriber):
 
     try:
       self._topics.put(topic, block=False)
-    except Queue.Full:
+    except queue.Full:
       pass
 
   @property
@@ -274,7 +274,7 @@ class _PubsubServicer(pubsub_pb2_grpc.PubsubServicer):
         try:
           topic = receiver.topics.get(block=False, timeout=1)
           yield pubsub_pb2.ListenResponse(topic=topic)
-        except Queue.Empty:
+        except queue.Empty:
           pass
 
   def Dispatch(self, request_iterator, context):
@@ -385,5 +385,5 @@ class PubsubClient(pattern.Logger):
           topic = receiver.topics.get(block=True, timeout=1)
           self.logger.debug('Dispatching topic %s...', topic.id)
           yield pubsub_pb2.DispatchRequest(topic=topic)
-        except Queue.Empty:
+        except queue.Empty:
           pass

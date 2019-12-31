@@ -1,4 +1,4 @@
-import ConfigParser
+import configparser
 import datetime
 import gflags
 import logging
@@ -108,7 +108,7 @@ class App(pattern.Logger, pattern.Closable):
 
 class Config(object):
   def __init__(self, config_path, default_section=None):
-    self._config = ConfigParser.ConfigParser()
+    self._config = configparser.ConfigParser()
     self._config.read(config_path)
     self._default_section = default_section
 
