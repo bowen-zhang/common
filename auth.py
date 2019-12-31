@@ -128,7 +128,7 @@ class Auth(_AuthBase):
     flask.session['access_token'] = token
 
     redirect_url = flask.session['redirect_url']
-    print('Redirect:' + redirect_url)
+    self.logger.info('Redirect: {0}'.format(redirect_url))
     if redirect_url:
       return flask.redirect(redirect_url)
     else:

@@ -116,17 +116,38 @@ class TimedFile(object):
 
 
 class BucketManager(object):
-  def __init__(self, path, max_size):
+  def __init__(self, path, max_size, file_filter=None, include_subdirs=True):
+    """Creates a BucketManager instance.
+
+    Args:
+      path: Path to manage.
+      max_size: max total file size in bytes to maintain.
+      file_filter: callback to filter files. It should take filename as single
+                   parameter and return true to include the file.
+      include_subdirs: if files in sub directories are managed as well.
+    """
     self._path = path
     self._max_size = max_size
+    self._file_filter = file_filter
+    self._include_subdirs = include_subdirs
 
   def cleanup(self):
-    filenames = os.listdir(self._path)
-    filepaths = [os.path.join(self._path, x) for x in filenames]
-    filepaths = [x for x in filepaths if os.path.isfile(x)]
+    filepaths = list(self._get_all_files(self._path, self._include_subdirs))
     filepaths.sort(key=lambda x: os.path.getctime(x), reverse=True)
     size = 0
     for filepath in filepaths:
       size += os.path.getsize(filepath)
       if size > self._max_size:
         os.remove(filepath)
+
+  def _get_all_files(self, path, recursive):
+    for filename in os.listdir(path):
+      if self._file_filter and not self._file_filter(filename):
+        continue
+
+      filepath = os.path.join(path, filename)
+      if os.path.isfile(filepath):
+        yield filepath
+      elif recursive:
+        for file in self._get_all_files(filepath, recursive):
+          yield file

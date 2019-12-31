@@ -99,9 +99,16 @@ class Stopable(object, metaclass=abc.ABCMeta):
 class Worker(Startable, Stopable, Closable, Logger):
   """Base class to support background thread."""
 
-  def __init__(self, worker_name=None, *args, **kwargs):
+  def __init__(self, worker_name=None, interval=None, *args, **kwargs):
+    """Creates a Worker instance.
+
+    Args:
+      worker_name: an arbitrary string describing the worker.
+      interval: a datetime.timedelta object specifying interval between each _on_run() call.
+    """
     super(Worker, self).__init__(*args, **kwargs)
     self._worker_name = worker_name if worker_name else self.__class__.__name__
+    self._interval_sec = interval.total_seconds() if interval else 0
     self._worker_thread = None
     self._abort_event = threading.Event()
 
@@ -114,8 +121,8 @@ class Worker(Startable, Stopable, Closable, Logger):
       return
 
     self._abort_event.clear()
-    self._worker_thread = threading.Thread(
-        name=self._worker_name, target=self._run)
+    self._worker_thread = threading.Thread(name=self._worker_name,
+                                           target=self._run)
     self._worker_thread.daemon = True
     self._worker_thread.start()
 
@@ -139,7 +146,10 @@ class Worker(Startable, Stopable, Closable, Logger):
       self._on_stop()
       return
 
-    while not self._abort_event.is_set():
+    abort = self._abort_event.is_set()
+    while not abort:
+      start_time_sec = time.time()
+
       try:
         if self._on_run() == False:
           break
@@ -151,6 +161,12 @@ class Worker(Startable, Stopable, Closable, Logger):
         except:
           self.logger.warn('Exception: {0}'.format(e))
           pass
+
+      wait_time_sec = start_time_sec + self._interval_sec - time.time()
+      if wait_time_sec > 0:
+        abort = self._abort_event.wait(wait_time_sec)
+      else:
+        abort = self._abort_event.is_set()
 
     self._on_stop()
 
