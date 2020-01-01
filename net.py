@@ -13,6 +13,14 @@ class Interface(object):
       return None
     return Interface(interfaces[0])
 
+  @classmethod
+  def has(cls, name):
+      try:
+          netifaces.ifaddresses(name)
+          return True
+      except ValueError:
+          return False
+
   @property
   def ip(self):
     return self._get_address_by_type(netifaces.AF_INET)
