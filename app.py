@@ -7,8 +7,8 @@ import sys
 import threading
 import time
 
+from . import pattern
 from absl import flags
-from common import pattern
 from google.protobuf import text_format
 
 FLAGS = flags.FLAGS
