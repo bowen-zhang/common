@@ -8,6 +8,7 @@ import threading
 import time
 
 from . import pattern
+from absl import app as absl_app
 from absl import flags
 from google.protobuf import text_format
 
@@ -18,6 +19,13 @@ flags.DEFINE_boolean('log_to_file', False, 'Log to a timestamp-named file.')
 flags.DEFINE_string(
     'loglevel', 'INFO',
     'Level of log to output, such as ERROR, WARNING, INFO, DEBUG.')
+
+
+def start(app_class):
+  def _main(_):
+    app_class().run()
+
+  absl_app.run(_main)
 
 
 class UTCFormatter(logging.Formatter):
@@ -90,6 +98,9 @@ class App(pattern.Logger, pattern.Closable):
       console_handler.setFormatter(
           logging.Formatter('%(levelname)-8s %(name)-12s: %(message)s'))
       root.addHandler(console_handler)
+
+  def run(self):
+    pass
 
   def close(self):
     self.logger.info('Exiting app...')
