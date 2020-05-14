@@ -2,20 +2,22 @@ import configparser
 import datetime
 import logging
 import os
+import re
 import signal
 import sys
 import threading
 import time
+import traceback
 
 from . import pattern
 from absl import app as absl_app
 from absl import flags
+from absl import logging as absl_logging
 from google.protobuf import text_format
 
 FLAGS = flags.FLAGS
 
 flags.DEFINE_boolean('log_to_file', False, 'Log to a timestamp-named file.')
-
 flags.DEFINE_string(
     'loglevel', 'INFO',
     'Level of log to output, such as ERROR, WARNING, INFO, DEBUG.')
@@ -30,6 +32,18 @@ def start(app_class):
 
 class UTCFormatter(logging.Formatter):
   converter = time.gmtime
+
+
+class LogNameFilter(logging.Filter):
+  _BLACKLIST = [
+      re.compile(r'kafka\..*'),
+  ]
+
+  def filter(self, record):
+    for pattern in self._BLACKLIST:
+      if pattern.match(record.name):
+        return False
+    return True
 
 
 class App(pattern.Logger, pattern.Closable):
@@ -50,7 +64,8 @@ class App(pattern.Logger, pattern.Closable):
     else:
       self._config = None
 
-    signal.signal(signal.SIGINT, self._signal_handler)
+    self._old_signal_handler = signal.signal(
+        signal.SIGINT, self._signal_handler)
 
   @property
   def name(self):
@@ -67,18 +82,20 @@ class App(pattern.Logger, pattern.Closable):
     log_level = getattr(logging, FLAGS.loglevel.upper(), None)
 
     root = logging.getLogger('')
-    root.setLevel(log_level)
+    root.removeHandler(absl_logging._absl_handler)
+    root.setLevel(logging.DEBUG)
     logfile_formatter = UTCFormatter(
         fmt='%(levelname)-8s %(asctime)s %(name)-12s %(message)s',
         datefmt='%m%d %H:%M:%S')
 
     if FLAGS.log_to_file:
       timestamp = '.{0:%Y%m%d.%H%M%S}'.format(datetime.datetime.utcnow())
-      debug = logging.FileHandler(
+      all = logging.FileHandler(
           os.path.join(log_path, self.name + timestamp + '.all'))
-      debug.setLevel(logging.INFO)
-      debug.setFormatter(logfile_formatter)
-      root.addHandler(debug)
+      all.setLevel(logging.DEBUG)
+      all.addFilter(LogNameFilter())
+      all.setFormatter(logfile_formatter)
+      root.addHandler(all)
 
       warning = logging.FileHandler(
           os.path.join(log_path, self.name + timestamp + '.wrn'))
@@ -93,10 +110,10 @@ class App(pattern.Logger, pattern.Closable):
       root.addHandler(error)
 
     if console_handler:
-      log_level = getattr(logging, FLAGS.loglevel.upper(), None)
       console_handler.setLevel(log_level)
+      console_handler.addFilter(LogNameFilter())
       console_handler.setFormatter(
-          logging.Formatter('%(levelname)-8s %(name)-12s: %(message)s'))
+          logging.Formatter('%(levelname)1.1s %(name)-16s: %(message)s'))
       root.addHandler(console_handler)
 
   def run(self):
@@ -112,9 +129,18 @@ class App(pattern.Logger, pattern.Closable):
 
   def _signal_handler(self, signal, frame):
     self.logger.warn('Aborting...')
-    for thread in threading.enumerate():
-      self.logger.debug('Thread: ("{0}")'.format(thread.name))
-    self.shutdown(-1)
+    if self._old_signal_handler:
+      # First time, assume app can terminate background threads properly and exit on its own.
+      handler = self._old_signal_handler
+      self._old_signal_handler = None
+      handler(signal, frame)
+    else:
+      # Second time, force to exit.
+      for thread_id, stack in sys._current_frames().items():
+        self.logger.info('Thread: %s', thread_id)
+        for filename, lineno, name, line in traceback.extract_stack(stack):
+          self.logger.info('%s:L%s', filename, lineno)
+      self.shutdown(-1)
 
 
 class Config(object):

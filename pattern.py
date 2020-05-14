@@ -2,8 +2,9 @@ import abc
 import logging
 import sys
 import threading
-import time
 import traceback
+
+from . import time_util
 
 
 class EventEmitter(object):
@@ -99,7 +100,7 @@ class Stopable(object, metaclass=abc.ABCMeta):
 class Worker(Startable, Stopable, Closable, Logger):
   """Base class to support background thread."""
 
-  def __init__(self, worker_name=None, interval=None, *args, **kwargs):
+  def __init__(self, worker_name=None, interval=None, clock=None, *args, **kwargs):
     """Creates a Worker instance.
 
     Args:
@@ -109,6 +110,7 @@ class Worker(Startable, Stopable, Closable, Logger):
     super(Worker, self).__init__(*args, **kwargs)
     self._worker_name = worker_name if worker_name else self.__class__.__name__
     self._interval_sec = interval.total_seconds() if interval else 0
+    self._clock = clock or time_util.RealWorldClock()
     self._worker_thread = None
     self._abort_event = threading.Event()
 
@@ -118,6 +120,10 @@ class Worker(Startable, Stopable, Closable, Logger):
 
   def start(self):
     if self._worker_thread and self._worker_thread.is_alive():
+      return
+
+    if self._on_start() == False:
+      self._on_stop()
       return
 
     self._abort_event.clear()
@@ -142,13 +148,9 @@ class Worker(Startable, Stopable, Closable, Logger):
     self.stop()
 
   def _run(self):
-    if self._on_start() == False:
-      self._on_stop()
-      return
-
     abort = self._abort_event.is_set()
     while not abort:
-      start_time_sec = time.time()
+      start_time_sec = self._clock.time()
 
       try:
         if self._on_run() == False:
@@ -162,12 +164,12 @@ class Worker(Startable, Stopable, Closable, Logger):
           self.logger.warn('Exception: {0}'.format(e))
           pass
 
-      wait_time_sec = start_time_sec + self._interval_sec - time.time()
+      wait_time_sec = start_time_sec + self._interval_sec - self._clock.time()
       if wait_time_sec > 0:
-        abort = self._abort_event.wait(wait_time_sec)
-      else:
-        abort = self._abort_event.is_set()
+        self._clock.wait_for_event(self._abort_event, wait_time_sec)
+      abort = self._abort_event.is_set()
 
+    self.logger.info('Stopping...')
     self._on_stop()
 
   def _on_start(self):
@@ -180,4 +182,4 @@ class Worker(Startable, Stopable, Closable, Logger):
     pass
 
   def _sleep(self, seconds):
-    self._abort_event.wait(seconds)
+    self._clock.wait_for_event(self._abort_event, seconds)
