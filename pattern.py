@@ -122,8 +122,11 @@ class Worker(Startable, Stopable, Closable, Logger):
     if self._worker_thread and self._worker_thread.is_alive():
       return
 
+    self.logger.info('Starting...')
     if self._on_start() == False:
+      self.logger.info('Stopping...')
       self._on_stop()
+      self.logger.info('Stopped.')
       return
 
     self._abort_event.clear()
@@ -148,6 +151,8 @@ class Worker(Startable, Stopable, Closable, Logger):
     self.stop()
 
   def _run(self):
+    self.logger.info('Started.')
+
     abort = self._abort_event.is_set()
     while not abort:
       start_time_sec = self._clock.time()
@@ -171,6 +176,7 @@ class Worker(Startable, Stopable, Closable, Logger):
 
     self.logger.info('Stopping...')
     self._on_stop()
+    self.logger.info('Stopped.')
 
   def _on_start(self):
     pass
