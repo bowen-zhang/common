@@ -86,6 +86,14 @@ class Logger(object):
   def logger(self):
     return self._logger
 
+  def log(self, message, tags=None):
+    if tags:
+      tags_str = ', '.join([key + '=' + str(value)
+                            for key, value in tags.items()])
+      self.logger.info('%s %s', message, tags_str)
+    else:
+      self.logger.info(message)
+
 
 class Startable(object, metaclass=abc.ABCMeta):
   def start(self):
